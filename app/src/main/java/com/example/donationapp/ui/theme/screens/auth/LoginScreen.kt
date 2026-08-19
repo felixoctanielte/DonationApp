@@ -13,7 +13,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -35,14 +34,12 @@ import androidx.compose.ui.unit.dp
 import com.example.donationapp.ui.theme.DonationAppTheme
 
 @Composable
-fun RegisterScreen(
-    onRegisterSuccess: () -> Unit,
-    onLoginClick: () -> Unit
+fun LoginScreen(
+    onLoginSuccess: () -> Unit,
+    onRegisterClick: () -> Unit
 ) {
-    var name by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    var confirmPassword by rememberSaveable { mutableStateOf("") }
     var errorMessage by rememberSaveable { mutableStateOf("") }
 
     Column(
@@ -54,38 +51,19 @@ fun RegisterScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Buat Akun",
+            text = "Masuk",
             style = MaterialTheme.typography.headlineMedium
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Daftar dan mulai berbagi kebaikan",
+            text = "Masuk untuk mulai berdonasi",
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center
         )
 
         Spacer(modifier = Modifier.height(32.dp))
-
-        OutlinedTextField(
-            value = name,
-            onValueChange = {
-                name = it
-                errorMessage = ""
-            },
-            label = { Text("Nama Lengkap") },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null
-                )
-            },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
             value = email,
@@ -130,29 +108,6 @@ fun RegisterScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = confirmPassword,
-            onValueChange = {
-                confirmPassword = it
-                errorMessage = ""
-            },
-            label = { Text("Konfirmasi password") },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Lock,
-                    contentDescription = null
-                )
-            },
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password
-            ),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
-
         if (errorMessage.isNotBlank()) {
             Spacer(modifier = Modifier.height(12.dp))
             Text(
@@ -168,39 +123,37 @@ fun RegisterScreen(
         Button(
             onClick = {
                 errorMessage = when {
-                    name.isBlank() -> "Nama tidak boleh kosong"
                     email.isBlank() -> "Email tidak boleh kosong"
                     !email.contains("@") -> "Format email tidak valid"
                     password.length < 6 -> "Password minimal 6 karakter"
-                    password != confirmPassword -> "Konfirmasi password tidak sama"
                     else -> ""
                 }
                 if (errorMessage.isEmpty()) {
-                    onRegisterSuccess()
+                    onLoginSuccess()
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp)
         ) {
-            Text("Daftar")
+            Text("Masuk")
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        TextButton(onClick = onLoginClick) {
-            Text("Sudah memiliki akun? Masuk")
+        TextButton(onClick = onRegisterClick) {
+            Text("Belum punya akun? Daftar")
         }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun RegisterScreenPreview() {
+private fun LoginScreenPreview() {
     DonationAppTheme {
-        RegisterScreen(
-            onRegisterSuccess = {},
-            onLoginClick = {}
+        LoginScreen(
+            onLoginSuccess = {},
+            onRegisterClick = {}
         )
     }
 }
