@@ -5,15 +5,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Newspaper
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Newspaper
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -27,32 +34,54 @@ import com.example.donationapp.ui.theme.screens.auth.LoginScreen
 import com.example.donationapp.ui.theme.screens.auth.RegisterScreen
 import com.example.donationapp.ui.theme.screens.donation.DonationScreen
 import com.example.donationapp.ui.theme.screens.home.HomeScreen
+import com.example.donationapp.ui.theme.screens.landing.LandingScreen
 import com.example.donationapp.ui.theme.screens.news.NewsDetailScreen
 import com.example.donationapp.ui.theme.screens.news.NewsScreen
 
 private data class BottomNavItem(
     val route: String,
     val label: String,
-    val icon: ImageVector
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector
 )
 
+/**
+ * Nav host utama.
+ *
+ * viewModelFactory berasal dari MainActivity (hasil Dagger inject),
+ * lalu diteruskan ke screen yang butuh ViewModel.
+ */
 @Composable
 fun DonationNavHost(
+    viewModelFactory: ViewModelProvider.Factory,
     navController: NavHostController = rememberNavController()
 ) {
     NavHost(
         navController = navController,
-        startDestination = Routes.REGISTER
+        startDestination = Routes.LANDING
     ) {
+        composable(Routes.LANDING) {
+            LandingScreen(
+                onGetStartedClick = {
+                    navController.navigate(Routes.REGISTER)
+                },
+                onLoginClick = {
+                    navController.navigate(Routes.LOGIN)
+                }
+            )
+        }
+
         composable(Routes.REGISTER) {
             RegisterScreen(
                 onRegisterSuccess = {
                     navController.navigate(Routes.MAIN) {
-                        popUpTo(Routes.REGISTER) { inclusive = true }
+                        popUpTo(Routes.LANDING) { inclusive = true }
                     }
                 },
                 onLoginClick = {
-                    navController.navigate(Routes.LOGIN)
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.LANDING)
+                    }
                 }
             )
         }
@@ -61,17 +90,20 @@ fun DonationNavHost(
             LoginScreen(
                 onLoginSuccess = {
                     navController.navigate(Routes.MAIN) {
-                        popUpTo(Routes.REGISTER) { inclusive = true }
+                        popUpTo(Routes.LANDING) { inclusive = true }
                     }
                 },
                 onRegisterClick = {
-                    navController.popBackStack()
+                    navController.navigate(Routes.REGISTER) {
+                        popUpTo(Routes.LANDING)
+                    }
                 }
             )
         }
 
         composable(Routes.MAIN) {
             MainScreen(
+                viewModelFactory = viewModelFactory,
                 onNewsClick = { newsId ->
                     navController.navigate(Routes.newsDetail(newsId))
                 }
@@ -83,30 +115,40 @@ fun DonationNavHost(
             arguments = listOf(navArgument("newsId") { type = NavType.IntType })
         ) { backStackEntry ->
             val newsId = backStackEntry.arguments?.getInt("newsId") ?: 0
-            NewsDetailScreen(newsId = newsId)
+            NewsDetailScreen(
+                newsId = newsId,
+                viewModelFactory = viewModelFactory
+            )
         }
     }
 }
 
 @Composable
 private fun MainScreen(
+    viewModelFactory: ViewModelProvider.Factory,
     onNewsClick: (Int) -> Unit
 ) {
     val navController = rememberNavController()
     val items = listOf(
-        BottomNavItem(Routes.HOME, "Beranda", Icons.Default.Home),
-        BottomNavItem(Routes.DONATION, "Donasi", Icons.Default.Favorite),
-        BottomNavItem(Routes.NEWS, "Berita", Icons.Default.Newspaper)
+        BottomNavItem(Routes.HOME, "Beranda", Icons.Filled.Home, Icons.Outlined.Home),
+        BottomNavItem(Routes.DONATION, "Donasi", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder),
+        BottomNavItem(Routes.NEWS, "Berita", Icons.Filled.Newspaper, Icons.Outlined.Newspaper)
     )
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                tonalElevation = 3.dp
+            ) {
                 items.forEach { item ->
+                    val selected =
+                        currentDestination?.hierarchy?.any { it.route == item.route } == true
                     NavigationBarItem(
-                        selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
+                        selected = selected,
                         onClick = {
                             navController.navigate(item.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
@@ -116,8 +158,20 @@ private fun MainScreen(
                                 restoreState = true
                             }
                         },
-                        icon = { Icon(item.icon, contentDescription = item.label) },
-                        label = { Text(item.label) }
+                        icon = {
+                            Icon(
+                                imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                                contentDescription = item.label
+                            )
+                        },
+                        label = { Text(item.label) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
                 }
             }
@@ -130,6 +184,7 @@ private fun MainScreen(
         ) {
             composable(Routes.HOME) {
                 HomeScreen(
+                    viewModelFactory = viewModelFactory,
                     onCampaignClick = {
                         navController.navigate(Routes.DONATION)
                     },
@@ -137,10 +192,13 @@ private fun MainScreen(
                 )
             }
             composable(Routes.DONATION) {
-                DonationScreen()
+                DonationScreen(viewModelFactory = viewModelFactory)
             }
             composable(Routes.NEWS) {
-                NewsScreen(onNewsClick = onNewsClick)
+                NewsScreen(
+                    viewModelFactory = viewModelFactory,
+                    onNewsClick = onNewsClick
+                )
             }
         }
     }

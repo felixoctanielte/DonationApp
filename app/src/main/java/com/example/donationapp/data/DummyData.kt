@@ -1,8 +1,17 @@
 package com.example.donationapp.data
 
-import  com.example.donationapp.data.model.DonationCampaign
-import  com.example.donationapp.data.model.News
+import com.example.donationapp.data.model.DonationCampaign
+import com.example.donationapp.data.model.News
 
+/**
+ * Data dummy lokal (bukan dari network).
+ *
+ * DIGUNAKAN OLEH:
+ * - DummyDonationDataSource saja
+ *
+ * JANGAN dipanggil langsung dari Screen lagi.
+ * Alur yang benar: Screen → ViewModel → Repository → DataSource → DummyData
+ */
 object DummyData {
 
     val campaigns = listOf(

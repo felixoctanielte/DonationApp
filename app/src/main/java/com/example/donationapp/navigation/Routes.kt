@@ -1,6 +1,7 @@
 package com.example.donationapp.navigation
 
 object Routes {
+    const val LANDING = "landing"
     const val REGISTER = "register"
     const val LOGIN = "login"
     const val MAIN = "main"
